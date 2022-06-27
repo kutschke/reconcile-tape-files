@@ -23,6 +23,8 @@ public:
   // Add information for one enstore file.
   void addEnstoreFile( double size, std::string const& pnfs_path );
 
+  bool isOnTape() const;
+
   // Information read from the input file
   std::string location; // Location code: none, old style pnfs, new style pnfs, persistent, scratch
   long nRecords = 0;    // Number of SAM records

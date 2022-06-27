@@ -154,27 +154,31 @@ int main( int argc, char** argv ){
   cout << "Orphan size:          " << orphanSize_TB << " TB" << endl;
 
 
+  // Files missing from the SAM Summary when the dataset is present in SAM.
   long missingFiles{0};
   double missingSize{0};
+
   ofstream summary("data/SAM_Listing_with_pnfs_counts.txt");
   for ( auto const& i : sam.datasets ){
     SAMDataset const& ds = i.second;
-    summary << setw(4)  << ds.location
-            << setw(12) << ds.nRecords
-            << setw(12) << ds.nFiles
-            << setw(12) << long(ds.size)
-            << setw(12) << ds.nEvents
-            << setw(12) << ds.nFoundFiles
-            << setw(12) << long(ds.nFoundSize)
-            << setw(4)  << ds.isDeleted
-            << setw(4)  << ds.pnfs
-            << setw(12) << ds.nFoundFiles-ds.nFiles
-            << setw(12) << long(std::round(ds.nFoundSize)-ds.size)
-            << "   "
-            << ds.dsName
-            << endl;
-    missingFiles += ds.nFoundFiles-ds.nFiles;
-    missingSize  += ds.nFoundSize-ds.size;
+    if ( ds.isOnTape() || ds.nFoundFiles > 0 ) {
+      summary << setw(4)  << ds.location
+              << setw(12) << ds.nRecords
+              << setw(12) << ds.nFiles
+              << setw(12) << long(ds.size)
+              << setw(12) << ds.nEvents
+              << setw(12) << ds.nFoundFiles
+              << setw(12) << long(ds.nFoundSize)
+              << setw(4)  << ds.isDeleted
+              << setw(4)  << ds.pnfs
+              << setw(12) << ds.nFoundFiles-ds.nFiles
+              << setw(12) << long(std::round(ds.nFoundSize)-ds.size)
+              << "   "
+              << ds.dsName
+              << endl;
+      missingFiles += ds.nFoundFiles-ds.nFiles;
+      missingSize  += ds.nFoundSize-ds.size;
+    }
   }
 
   cout << "Orphan size:          " << orphanSize_TB     << " TB" << endl;

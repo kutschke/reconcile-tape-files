@@ -23,6 +23,10 @@ SAMDataset::SAMDataset ( const std::string& line, std::vector<std::string> const
 
 }
 
+bool SAMDataset::isOnTape() const{
+  return ( location == "t" || location == "T" || location == "Dt" || location == "DT" );
+}
+
 // Add information for one enstore file.
 void SAMDataset::addEnstoreFile( double size, std::string const& pnfs_path ) {
   ++nFoundFiles;

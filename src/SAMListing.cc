@@ -46,13 +46,8 @@ SAMListing::SAMListing ( std::string const& inputFile, string const& deletedData
       break;
     }
 
-    if ( vs[0] == "t" || vs[0] == "T" || vs[0] == "Dt" || vs[0] == "DT" ) {
-      // Keep dataset if it is on the tape.
-      SAMDataset ds(line,deleted);
-      datasets[ds.dsName] = ds;
-    } else if ( vs[0] != "-" && vs[0] != "S" && vs[0] != "D" ){
-      throw std::logic_error("Could not understand file location for dataset:  " + line );
-    }
+    SAMDataset ds(line,deleted);
+    datasets[ds.dsName] = ds;
   }
 
 }
