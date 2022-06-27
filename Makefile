@@ -13,6 +13,7 @@ all: bin/reconcile-tape-files
 	g++ $(CCFLAGS) -c $< -o $@
 
 bin/reconcile-tape-files: $(OBJS)
+	if [[ ! -d bin ]]; then mkdir bin; fi
 	g++ -o bin/reconcile-tape-files $(LFLAGS) $(OBJS)
 
 clean:
