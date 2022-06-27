@@ -22,15 +22,20 @@ This program reads 2 or 3 input files and produces 4 output files.  The input fi
 
 The output files are:
 
-1. SAM_Listing_with_pnfs_counts.txt a copy of the second input file with additional information that comes from reading the ENSTORE listing.  See below for details
-1. SAM_Listing_missing_with_pnfs_counts.txt the some information as the first output file but for SAM datasets that were identified in the ENSTORE listing but are not present in the second input file.
+1. SAM_Listing_with_pnfs_counts.txt a copy of the information from the SAM listing input file with additional information that comes from reading the ENSTORE listing. Only datasets with tape resident files are printed out. See below for more details.
+1. SAM_Listing_missing_with_pnfs_counts.txt the same information as the first output file but for SAM datasets that were identified in the ENSTORE listing but are not present in the SAM listing input file.
 1. fileFamilySummary_allFiles.txt the number of files and the total file size sorted by file family for all files in the enstore listing
 1. fileFamilySummary_currentFiles.txt the same information as the previous file but excluding datasets that were marked as deleted by the third input file.
 
 The program reads the SAM dataset listing and keeps an internal copy.
-It then processes the ENSTORE listing to count the number of files from each dataset that are present in the ENSTORE listing;
-it also records the total size of those files.
-It also creates internal dataset records for datasets not found in the SAM dataset listing and populates those with the file count and total size.
+It then processes the ENSTORE listing to count the number of files in each dataset and the total size of each dataset.
+It also creates internal dataset records for datasets not found in the SAM dataset listing and populates each of those with its file count
+and total size.
+
+The first output file contains those datasets which satisify one of two conditions:
+the dataset is marked as "on tape" in the input file
+or the dataset has at least one entry in the ENSTORE listing.
+Any datasets that are only disk resident according to both the SAM listing and the ENSTORE listing are not printed out.
 
 The columns in the first two output files have the following information:
 1. From input: a code saying if where the files in this dataset are found; see the input file for a description.
