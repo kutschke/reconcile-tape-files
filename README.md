@@ -15,7 +15,7 @@ To build and run this program:
 The input files are described below.  The output files will be written to the directory given by the -o argument.
 The -n (--n-heartbeat)  argument is the interval of the heartbeat printout; a value of 500,000 will make a printout about every 5 seconds on mu2egpm*.
 
-This program reads 2 or 3 input files and produces 4 output files.  The input files are:
+This program reads 2 or 3 input files and produces 5 output files plus log output to cout.  The input files are:
 1. A file containing a list of all Mu2e files in ENSTORE.  This can be obtained with the command: ```curl -O https://www-stken.fnal.gov/enstore/tape_inventory/COMPLETE_FILE_LISTING_mu2e``` .  You need to be on VPN or on site to download the file.  It is very large and will crash most browsers.  In the summer of 2022 it was 4.3 GB.
 1. A file containing a summary of the Mu2e SAM datasets.  This file is updated nightly and is available at: ```https://mu2e.fnal.gov/atwork/computing/ops/samMon.html```. 
 1. Optional input: a text file containing the names of SAM datasets that were present in SAM when the second input file was made but which have since been deleted.  One dataset name per line, unquoted. This is useful while doing ongoing work to purge datasets.  The file is allowed to be empty.
@@ -26,6 +26,7 @@ The output files are:
 1. SAM_Listing_missing_with_pnfs_counts.txt the same information as the first output file but for SAM datasets that were identified in the ENSTORE listing but are not present in the SAM listing input file.
 1. fileFamilySummary_allFiles.txt the number of files and the total file size sorted by file family for all files in the enstore listing
 1. fileFamilySummary_currentFiles.txt the same information as the previous file but excluding datasets that were marked as deleted by the third input file.
+1. Files_with_no_dataset.txt the full pnfs paths for files in the ENSTORE listing and for which a dataset name cannot be extracted from the filename.
 
 The program reads the SAM dataset listing and keeps an internal copy.
 It then processes the ENSTORE listing to count the number of files in each dataset and the total size of each dataset.

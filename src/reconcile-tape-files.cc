@@ -36,8 +36,6 @@ std::vector<std::string> parseHeaders ( std::ifstream& in ){
 
 using namespace std;
 
-
-
 int main( int argc, char** argv ){
 
   // Parse command line arguments.
@@ -56,6 +54,9 @@ int main( int argc, char** argv ){
   // Datasets that are found in the Enstore listing but are missing from SAM.
   map<string,SAMDataset> missingDatasets;
 
+  // Files in the ENSTORE listing for which I cannot determine dataset
+  vector<string> filesWithNoDataset;
+
   // Summary of datasets by era.
   EraClassifier classifier;
 
@@ -70,16 +71,26 @@ int main( int argc, char** argv ){
         }
   }
 
+  // Number of files on scrarch
+  long nScratch{0};
+
+  // Number of files that SFA packs
+  long nAggregate{0};
+
+  // Number of files that have an identifed dataset and that dataset is present in the SAM listing.
+  // Excludes SFA packs.
+  long nOK{0};
+
+  // Size of all files from the enstore list, excluding the SFA packs (in bytes).
   long size{0};
 
+  // Orphan files are those with an identified dataset but that dataset is not in the SAM listing.
+  long nOrphan{0};
   double orphanSize{0};
 
-  long nScratch{0};
-  long nAggregate{0};
-  long nOK{0};
-  long nBad{0};
-
+  // Number of records read from the enstore listing
   long nRead{0};
+
   for ( long i=0; i<config.maxRecords; ++i ){
     string line;
     getline(in,line);
@@ -119,16 +130,19 @@ int main( int argc, char** argv ){
         families_currentFiles.addFile( r.file_family, r.size );
       }
     }else {
-      ++nBad;
+      ++nOrphan;
       orphanSize += r.size;
       SAMDataset& ds = missingDatasets[r.dsname];
+      if ( r.dsname.empty() ) {
+        filesWithNoDataset.push_back( r.pnfs_path );
+      }
       ++ds.nFoundFiles;
       ds.nFoundSize += double(r.size)/1.e6;
       ds.dsName = r.dsname;
     }
   } // end loop over records in enstore listing
 
-  long total = nOK + nBad + nScratch + nAggregate;
+  long total = nOK + nOrphan + nScratch + nAggregate;
 
   // Cross-check file counts.
   long check{0};
@@ -137,22 +151,21 @@ int main( int argc, char** argv ){
   }
 
   // Summary printout.
-  cout << "Number OK:               " << nOK        << endl;
-  cout << "Number bad:              " << nBad       << endl;
-  cout << "Number on scratch:       " << nScratch   << endl;
-  cout << "Number of aggregates:    " << nAggregate << endl;
-  cout << "Total:                   " << total      << endl;
-  cout << "Total read:              " << nRead      << endl;
-  cout << "Number of files counted: " << check  << "   "  << check-nOK  << endl;
+  cout << "Number with SAM dataset:               " << nOK        << endl;
+  cout << "  -Cross-check:                        " << check      << "   "  << check-nOK  << endl;
+  cout << "Number without SAM dataset:            " << nOrphan    << endl;
+  cout << "Number on scratch:                     " << nScratch   << endl;
+  cout << "Number of aggregates:                  " << nAggregate << endl;
+  cout << "Total:                                 " << total      << endl;
+  cout << "  -Cross-check:                        " << nRead      << endl;
   cout << endl;
 
   double size_MB = double(size)/1.e6;
   double size_TB = double(size)/1.e12;
   double orphanSize_TB =  double(orphanSize)/1.e12;
-  cout << "Total size:           " << size_MB   << " MB" << endl;
-  cout << "Total size:           " << size_TB   << " TB" << endl;
-  cout << "Orphan size:          " << orphanSize_TB << " TB" << endl;
-
+  cout << "Total size:               " << size_MB   << " MB" << endl;
+  cout << "Total size:               " << size_TB   << " TB" << endl;
+  cout << "Size without SAM dataset: " << orphanSize_TB << " TB" << endl;
 
   // Files missing from the SAM Summary when the dataset is present in SAM.
   long missingFiles{0};
@@ -181,13 +194,18 @@ int main( int argc, char** argv ){
     }
   }
 
-  cout << "Orphan size:          " << orphanSize_TB     << " TB" << endl;
-  cout << "Missing Files:        " << missingFiles      << endl;
-  cout << "Missing size:         " << missingSize/1.e6  << " TB" << endl;
+  cout << endl;
+  cout << "Number of files in ENSTORE but not SAM:  " << missingFiles      << endl;
+  cout << "Size of files in ENSTORE but not SAM:    " << missingSize/1.e6  << " TB" << endl; // ds.size is in MB
+
+  cout << endl;
+  cout << "Number files with no dataset:  " << filesWithNoDataset.size() << endl;
+  cout << "  - See data/Files_with_no_dataset.txt" << endl;
 
   ofstream summary2("data/SAM_Listing_missing_with_pnfs_counts.txt");
   for ( auto const& i : missingDatasets ){
     SAMDataset const& ds = i.second;
+    string dsName = ( ds.dsName.empty() ) ? "No dataset name identified." : ds.dsName;
     summary2 << setw(4)  << ds.location
              << setw(12) << ds.nRecords
              << setw(12) << ds.nFiles
@@ -200,8 +218,13 @@ int main( int argc, char** argv ){
              << setw(12) << ds.nFoundFiles-ds.nFiles
              << setw(12) << long(std::round(ds.nFoundSize-ds.size))
              << "   "
-             << ds.dsName
+             << dsName
              << endl;
+  }
+
+  ofstream summary3("data/Files_with_no_dataset.txt");
+  for ( string const& s : filesWithNoDataset ){
+    summary3 << s << endl;
   }
 
   printFileFamilySummary( families_allFiles,     "data/fileFamilySummary_allFiles.txt" );
@@ -210,6 +233,12 @@ int main( int argc, char** argv ){
   long long sumFiles{0};
   double sumSize{0.};
 
+  cout << endl;
+  cout << "Summary of files by era: " << endl;
+  cout << setw(12) << "Era"
+       << setw(12) << "nFiles"
+       << "    Size (TB)"
+       << endl;
   for ( auto const& i : classifier.stats() ){
     double size_TB = double(i.second.size)/1.e12;
     cout << setw(12) << i.first
@@ -219,6 +248,7 @@ int main( int argc, char** argv ){
     sumFiles += i.second.nFiles;
     sumSize  += size_TB;
   }
+  cout << "--------------------------------" << endl;
   cout << setw(12) << "Total: "
        << setw(12) << sumFiles
        << "     "  << sumSize
